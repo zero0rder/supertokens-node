@@ -104,7 +104,7 @@ export async function createResetPasswordToken(recipeInstance: Recipe, userId: s
         throw new STError(
             {
                 type: STError.UNKNOWN_USER_ID_ERROR,
-                message: "Failed to generated password reset token as the user ID is unknown",
+                message: "Failed to generate password reset token as the user ID is unknown",
             },
             recipeInstance.getRecipeId()
         );

@@ -55,6 +55,183 @@ describe(`passwordreset: ${printPath("[test/emailpassword/passwordreset.test.js]
         await cleanST();
     });
 
+    /* in passwordResetFunctions.ts:
+        check that getResetPasswordURL works fine
+        check that createAndSendCustomEmail works fine
+    */
+    it("test that getResetPasswordURL works fine", async function () {
+        await startST();
+        STExpress.init({
+            supertokens: {
+                connectionURI: "http://localhost:8080",
+            },
+            appInfo: {
+                apiDomain: "api.supertokens.io",
+                appName: "SuperTokens",
+                websiteDomain: "supertokens.io",
+            },
+            recipeList: [EmailPassword.init(), Session.init()],
+        });
+        const app = express();
+
+        app.use(STExpress.middleware());
+
+        app.use(STExpress.errorHandler());
+
+        let signUpResponse = await signUPRequest(app, "random@gmail.com", "validPass123");
+        assert(signUpResponse.status === 200);
+
+        let resetPasswordURL = await EmailPasswordRecipe.getInstanceOrThrowError().config.resetPasswordUsingTokenFeature.getResetPasswordURL(
+            JSON.parse(signUpResponse.text).user
+        );
+        assert(resetPasswordURL === "https://supertokens.io/auth/reset-password");
+    });
+
+    it("test that createAndSendCustomEmail works fine", async function () {
+        await startST();
+
+        let userValue = null;
+        let passwordResetURLWithTokenValue = null;
+        STExpress.init({
+            supertokens: {
+                connectionURI: "http://localhost:8080",
+            },
+            appInfo: {
+                apiDomain: "api.supertokens.io",
+                appName: "SuperTokens",
+                websiteDomain: "supertokens.io",
+            },
+            recipeList: [
+                EmailPassword.init({
+                    resetPasswordUsingTokenFeature: {
+                        createAndSendCustomEmail: (user, passwordResetURLWithToken) => {
+                            userValue = user;
+                            passwordResetURLWithTokenValue = passwordResetURLWithToken;
+                        },
+                    },
+                }),
+                Session.init(),
+            ],
+        });
+        const app = express();
+
+        app.use(STExpress.middleware());
+
+        app.use(STExpress.errorHandler());
+
+        let signUpResponse = await signUPRequest(app, "random@gmail.com", "validPass123");
+        assert(signUpResponse.status === 200);
+
+        let signUpUser = JSON.parse(signUpResponse.text).user;
+
+        await new Promise((resolve) =>
+            request(app)
+                .post("/auth/user/password/reset/token")
+                .send({
+                    formFields: [
+                        {
+                            id: "email",
+                            value: "random@gmail.com",
+                        },
+                    ],
+                })
+                .expect(200)
+                .end((err, res) => {
+                    if (err) {
+                        resolve(undefined);
+                    } else {
+                        resolve(res);
+                    }
+                })
+        );
+
+        assert(userValue.id === signUpUser.id);
+        assert(userValue.email === signUpUser.email);
+        assert(passwordResetURLWithTokenValue !== null);
+    });
+
+    /* generate token API:
+            Call the createResetPasswordToken function with valid input
+            Call the createResetPasswordToken with unknown userId and test error thrown
+    */
+    it("test that createResetPasswordToken works fine", async function () {
+        await startST();
+
+        STExpress.init({
+            supertokens: {
+                connectionURI: "http://localhost:8080",
+            },
+            appInfo: {
+                apiDomain: "api.supertokens.io",
+                appName: "SuperTokens",
+                websiteDomain: "supertokens.io",
+            },
+            recipeList: [
+                EmailPassword.init({
+                    resetPasswordUsingTokenFeature: {
+                        createAndSendCustomEmail: (user, passwordResetURLWithToken) => {
+                            userValue = user;
+                            passwordResetURLWithTokenValue = passwordResetURLWithToken;
+                        },
+                    },
+                }),
+                Session.init(),
+            ],
+        });
+        const app = express();
+
+        app.use(STExpress.middleware());
+
+        app.use(STExpress.errorHandler());
+
+        let signUpResponse = await signUPRequest(app, "random@gmail.com", "validPass123");
+        assert(signUpResponse.status === 200);
+
+        let resetPasswordToken = await EmailPasswordRecipe.getInstanceOrThrowError().createResetPasswordToken(
+            JSON.parse(signUpResponse.text).user.id
+        );
+        assert(resetPasswordToken !== null);
+    });
+
+    it("test that createResetPasswordToken throws error with unknown userID", async function () {
+        await startST();
+
+        STExpress.init({
+            supertokens: {
+                connectionURI: "http://localhost:8080",
+            },
+            appInfo: {
+                apiDomain: "api.supertokens.io",
+                appName: "SuperTokens",
+                websiteDomain: "supertokens.io",
+            },
+            recipeList: [
+                EmailPassword.init({
+                    resetPasswordUsingTokenFeature: {
+                        createAndSendCustomEmail: (user, passwordResetURLWithToken) => {
+                            userValue = user;
+                            passwordResetURLWithTokenValue = passwordResetURLWithToken;
+                        },
+                    },
+                }),
+                Session.init(),
+            ],
+        });
+        const app = express();
+
+        app.use(STExpress.middleware());
+
+        app.use(STExpress.errorHandler());
+
+        try {
+            await EmailPasswordRecipe.getInstanceOrThrowError().createResetPasswordToken("randomTOKEN");
+        } catch (error) {
+            if (error.message !== "Failed to generate password reset token as the user ID is unknown") {
+                throw error;
+            }
+        }
+    });
+
     /*
      * generate token API:
      *      - email validation checks
