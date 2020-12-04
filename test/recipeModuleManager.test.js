@@ -47,6 +47,66 @@ describe(`recipeModuleManagerTest: ${printPath("[test/recipeModuleManager.test.j
         await cleanST();
     });
 
+    //If a recipe has a callback and a user implements it, but throws a normal error from it, then we need to make sure that that error is caught only by their error handler
+    it("test that a user implemented a recipe callback and it throws an error, that error is handled by the user error handler", async function () {
+        await startST();
+
+        try {
+            await Querier.getInstanceOrThrowError();
+            assert(false);
+        } catch (err) {
+            if (err.type !== ST.Error.GENERAL_ERROR) {
+                throw err;
+            }
+        }
+
+        ST.init({
+            supertokens: {
+                connectionURI: "http://localhost:8080",
+            },
+            appInfo: {
+                apiDomain: "api.supertokens.io",
+                appName: "SuperTokens",
+                websiteDomain: "supertokens.io",
+            },
+            recipeList: [
+                TestRecipe4.init({
+                    testFunction: () => {
+                        throw new Error("Test error");
+                    },
+                }),
+            ],
+        });
+
+        const app = express();
+
+        app.use(ST.middleware());
+
+        app.use(ST.errorHandler());
+
+        app.use((err, request, response, next) => {
+            if (err.message == "Test error") {
+                response.status(200).send(JSON.stringify({ message: "success" }));
+            } else {
+                response.status(500).send("Invalid error");
+            }
+        });
+
+        let r1 = await new Promise((resolve) =>
+            request(app)
+                .post("/auth/error-callback")
+                .expect(200)
+                .end((err, res) => {
+                    if (err) {
+                        resolve(undefined);
+                    } else {
+                        resolve(JSON.parse(res.text));
+                    }
+                })
+        );
+        assert(r1.message === "success");
+    });
+
     // Check that querier has been inited when we call supertokens.init
     // Failure condition: initalizing supertoknes before the the first try catch will fail the test
     it("test that querier has been initiated when we call supertokens.init", async function () {
@@ -854,6 +914,52 @@ class TestRecipe3Duplicate extends RecipeModule {
 
     getAllCORSHeaders() {
         return ["test-recipe-3"];
+    }
+
+    static reset() {
+        this.instance = undefined;
+    }
+}
+
+class TestRecipe4 extends RecipeModule {
+    config = {};
+    constructor(recipeId, appInfo, config) {
+        super(recipeId, appInfo);
+        this.config = config;
+    }
+
+    static init(config) {
+        return (appInfo) => {
+            if (TestRecipe4.instance === undefined) {
+                TestRecipe4.instance = new TestRecipe4("testRecipe4", appInfo, config);
+                return TestRecipe4.instance;
+            } else {
+                throw new Error("already initialised");
+            }
+        };
+    }
+
+    getAPIsHandled() {
+        return [
+            {
+                method: "post",
+                pathWithoutApiBasePath: new NormalisedURLPath(this.getRecipeId(), "/error-callback"),
+                id: "/error-callback",
+                disabled: false,
+            },
+        ];
+    }
+
+    async handleAPIRequest(id, req, res, next) {
+        if (id === "/error-callback") {
+            this.config.testFunction();
+            res.status(200).send("testRecipe4");
+            return;
+        }
+    }
+
+    getAllCORSHeaders() {
+        return ["test-recipe-4"];
     }
 
     static reset() {
