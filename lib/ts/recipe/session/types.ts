@@ -17,6 +17,7 @@ import NormalisedURLPath from "../../normalisedURLPath";
 import { RecipeInterface as JWTRecipeInterface, APIInterface as JWTAPIInterface } from "../jwt/types";
 import OverrideableBuilder from "supertokens-js-override";
 import { RecipeInterface as OpenIdRecipeInterface, APIInterface as OpenIdAPIInterface } from "../openid/types";
+import { Grant } from "../../types";
 
 export type KeyInfo = {
     publicKey: string;
@@ -104,6 +105,7 @@ export type TypeInput = {
     cookieDomain?: string;
     errorHandlers?: ErrorHandlers;
     antiCsrf?: "VIA_TOKEN" | "VIA_CUSTOM_HEADER" | "NONE";
+    defaultRequiredGrants?: Grant[];
     jwt?:
         | {
               enable: true;
@@ -149,6 +151,7 @@ export const InputSchema = {
         cookieDomain: TypeString,
         errorHandlers: InputSchemaErrorHandlers,
         antiCsrf: TypeString,
+        defaultRequiredGrants: TypeAny,
         jwt: TypeAny,
         override: TypeAny,
     },
@@ -163,6 +166,7 @@ export type TypeNormalisedInput = {
     sessionExpiredStatusCode: number;
     errorHandlers: NormalisedErrorHandlers;
     antiCsrf: "VIA_TOKEN" | "VIA_CUSTOM_HEADER" | "NONE";
+    defaultRequiredGrants: Grant[];
     jwt: {
         enable: boolean;
         propertyNameInAccessTokenPayload: string;
@@ -218,6 +222,7 @@ export interface NormalisedErrorHandlers {
 export interface VerifySessionOptions {
     antiCsrfCheck?: boolean;
     sessionRequired?: boolean;
+    requiredGrants?: Grant[];
 }
 
 export type RecipeInterface = {

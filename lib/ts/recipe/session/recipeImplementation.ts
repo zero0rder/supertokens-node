@@ -121,7 +121,17 @@ export default function getRecipeInterface(querier: Querier, config: TypeNormali
             if (!res.wrapperUsed) {
                 res = frameworks[SuperTokens.getInstanceOrThrowError().framework].wrapResponse(res);
             }
-            let response = await SessionFunctions.createNewSession(helpers, userId, accessTokenPayload, sessionData);
+            let payload = {
+                ...accessTokenPayload,
+            };
+            for (const grant of config.defaultRequiredGrants) {
+                const value = await grant.checkUser(userId);
+                if (value !== undefined) {
+                    payload = grant.addToAccessTokenPayload(payload, value);
+                }
+            }
+            const response = await SessionFunctions.createNewSession(helpers, userId, payload, sessionData);
+
             attachCreateOrRefreshSessionResponseToExpressRes(config, res, response);
             return new Session(
                 helpers,

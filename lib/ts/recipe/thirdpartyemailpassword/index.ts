@@ -18,11 +18,14 @@ import SuperTokensError from "./error";
 import * as thirdPartyProviders from "../thirdparty/providers";
 import { RecipeInterface, User, APIInterface, EmailPasswordAPIOptions, ThirdPartyAPIOptions } from "./types";
 import { TypeProvider } from "../thirdparty/types";
+import { BooleanGrant } from "../../booleanGrant";
 
 export default class Wrapper {
     static init = Recipe.init;
 
     static Error = SuperTokensError;
+
+    static emailVerifiedGrant = new BooleanGrant("email-verified", Wrapper.isEmailVerified);
 
     static signInUp(
         thirdPartyId: string,
@@ -178,5 +181,7 @@ export let GoogleWorkspaces = Wrapper.GoogleWorkspaces;
 // export let Okta = Wrapper.Okta;
 
 // export let ActiveDirectory = Wrapper.ActiveDirectory;
+
+export const emailVerifiedGrant = Wrapper.emailVerifiedGrant;
 
 export type { RecipeInterface, TypeProvider, User, APIInterface, EmailPasswordAPIOptions, ThirdPartyAPIOptions };

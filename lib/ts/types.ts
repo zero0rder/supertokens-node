@@ -102,3 +102,18 @@ export type APIHandled = {
 };
 
 export type HTTPMethod = "post" | "get" | "delete" | "put" | "options" | "trace";
+
+// TODO: Maybe we should standardize how these are stored in the access token
+export type Grant = {
+    readonly key: string;
+
+    checkUser(userId: string): Promise<boolean> | boolean;
+
+    addToAccessTokenPayload(origPayload: any, value: any): any;
+    removeFromAccessTokenPayload(origPayload: any): any;
+    checkAccessTokenPayload(payload: any): Promise<boolean> | boolean;
+    // We could add handlers as well if necessary, but they could be included in the checks themselves
+    checkers: {
+        [checkerName: string]: (...params: any[]) => (payload: any) => Promise<boolean> | boolean;
+    };
+};

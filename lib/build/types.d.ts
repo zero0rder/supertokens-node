@@ -96,3 +96,13 @@ export declare type APIHandled = {
     disabled: boolean;
 };
 export declare type HTTPMethod = "post" | "get" | "delete" | "put" | "options" | "trace";
+export declare type Grant = {
+    readonly key: string;
+    checkUser(userId: string): Promise<boolean> | boolean;
+    addToAccessTokenPayload(origPayload: any, value: any): any;
+    removeFromAccessTokenPayload(origPayload: any): any;
+    checkAccessTokenPayload(payload: any): Promise<boolean> | boolean;
+    checkers: {
+        [checkerName: string]: (...params: any[]) => (payload: any) => Promise<boolean> | boolean;
+    };
+};

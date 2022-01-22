@@ -3,9 +3,11 @@ import Recipe from "./recipe";
 import SuperTokensError from "./error";
 import { RecipeInterface, User, APIInterface, EmailPasswordAPIOptions, ThirdPartyAPIOptions } from "./types";
 import { TypeProvider } from "../thirdparty/types";
+import { BooleanGrant } from "../../booleanGrant";
 export default class Wrapper {
     static init: typeof Recipe.init;
     static Error: typeof SuperTokensError;
+    static emailVerifiedGrant: BooleanGrant;
     static signInUp(
         thirdPartyId: string,
         thirdPartyUserId: string,
@@ -135,4 +137,5 @@ export declare let Facebook: typeof import("../thirdparty/providers/facebook").d
 export declare let Apple: typeof import("../thirdparty/providers/apple").default;
 export declare let Discord: typeof import("../thirdparty/providers/discord").default;
 export declare let GoogleWorkspaces: typeof import("../thirdparty/providers/googleWorkspaces").default;
+export declare const emailVerifiedGrant: BooleanGrant;
 export type { RecipeInterface, TypeProvider, User, APIInterface, EmailPasswordAPIOptions, ThirdPartyAPIOptions };

@@ -242,6 +242,7 @@ export function validateAndNormaliseUserInput(
         errorHandlers,
         antiCsrf,
         override,
+        defaultRequiredGrants: config?.defaultRequiredGrants === undefined ? [] : config.defaultRequiredGrants,
         jwt: {
             enable: enableJWT,
             propertyNameInAccessTokenPayload: accessTokenPayloadJWTPropertyName,
